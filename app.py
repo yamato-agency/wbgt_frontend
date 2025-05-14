@@ -30,8 +30,7 @@ STATION_CONFIG = {
         'stations': {
             '61286': { 'name': '京都', 'lat': 35.0116, 'lon': 135.7681 }
         }
-    }
-    # 他の都道府県のデータ（現在はコメントアウト）
+    },
     # 'hokkaido': {
     #     'name': '北海道',
     #     'stations': {
