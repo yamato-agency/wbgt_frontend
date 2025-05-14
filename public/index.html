@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>京都府の暑さ指数情報</title>
+    <style>
+        .wbgt-data {
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            padding: 10px;
+        }
+        .wbgt-data ul {
+            list-style: none;
+            padding: 0;
+        }
+        .wbgt-data li {
+            margin-bottom: 5px;
+            padding-bottom: 3px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        #status-message {
+            color: blue;
+            margin-bottom: 10px;
+        }
+        #error-message {
+            color: red;
+            margin-bottom: 10px;
+        }
+        .location-selector {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+        }
+        select {
+            padding: 8px;
+            margin: 5px;
+            font-size: 1em;
+        }
+        button {
+            padding: 8px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>京都府の暑さ指数情報</h1>
+    
+    <div class="location-selector">
+        <h2>観測地点を選択</h2>
+        <select id="station-select">
+            <option value="">観測地点を選択</option>
+        </select>
+        <button id="get-wbgt-btn" disabled>暑さ指数を取得</button>
+    </div>
+
+    <div id="status-message"></div>
+    <div id="error-message"></div>
+    <div id="wbgt-output"></div>
+
+    <script>
+        // 観測地点のデータ
+        const stationLocationData = {
+            '61286': { name: '京都', pref: '京都府', lat: 35.0116, lon: 135.7681 }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const stationSelect = document.getElementById('station-select');
+            const getWbgtBtn = document.getElementById('get-wbgt-btn');
+            const statusMessageDiv = document.getElementById('status-message');
+            const errorMessageDiv = document.getElementById('error-message');
+            const wbgtOutputDiv = document.getElementById('wbgt-output');
+
+            // 観測地点の選択肢を生成
+            Object.entries(stationLocationData).forEach(([code, station]) => {
+                const option = document.createElement('option');
+                option.value = code;
+                option.textContent = station.name;
+                stationSelect.appendChild(option);
+            });
+
+            // 観測地点が選択されたときの処理
+            stationSelect.addEventListener('change', () => {
+                getWbgtBtn.disabled = !stationSelect.value;
+            });
+
+            // 暑さ指数取得ボタンのクリック処理
+            getWbgtBtn.addEventListener('click', () => {
+                const selectedStation = stationLocationData[stationSelect.value];
+                if (!selectedStation) return;
+
+                statusMessageDiv.textContent = 'データを取得中...';
+                errorMessageDiv.textContent = '';
+                wbgtOutputDiv.innerHTML = '';
+
+                fetch('https://my-wbgt-app.onrender.com/get-wbgt-html', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'text/html',
+                        'Cache-Control': 'no-cache'
+                    },
+                    mode: 'cors',
+                    credentials: 'omit'
+                })
+                .then(response => response.text())
+                .then(htmlString => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(htmlString, 'text/html');
+                    const wbgtMonitor = doc.getElementById('wbgt_monitor');
+
+                    if (wbgtMonitor) {
+                        const siteElements = wbgtMonitor.querySelectorAll('.wbgt_monitor_site');
+                        let foundMatch = false;
+
+                        siteElements.forEach(siteElement => {
+                            const nameElement = siteElement.querySelector('.name');
+                            const valueElement = siteElement.querySelector('.value');
+                            const onclickAttr = siteElement.getAttribute('onclick');
+
+                            if (nameElement && valueElement && onclickAttr) {
+                                const stationName = nameElement.textContent.trim();
+                                const wbgtValue = valueElement.textContent.trim();
+                                const match = onclickAttr.match(/submitMapGraph\([^,]+,\s*'[^']+',\s*'[^']+',\s*'([^']+)'\)/);
+                                const stationCode = match ? match[1] : null;
+
+                                if (stationCode === stationSelect.value) {
+                                    const datetimeElement = wbgtMonitor.querySelector('#wbgt_monitor_datetime');
+                                    const updateTime = datetimeElement ? datetimeElement.textContent.trim() : '時刻情報なし';
+
+                                    let resultHtml = '<div class="wbgt-data">';
+                                    resultHtml += `<h2>更新時刻: ${updateTime}</h2>`;
+                                    resultHtml += `<h3>${selectedStation.pref}（${selectedStation.name}）の暑さ指数</h3>`;
+                                    resultHtml += `<ul><li>${stationName}: ${wbgtValue}</li></ul>`;
+                                    resultHtml += '</div>';
+                                    wbgtOutputDiv.innerHTML = resultHtml;
+                                    foundMatch = true;
+                                }
+                            }
+                        });
+
+                        if (!foundMatch) {
+                            errorMessageDiv.textContent = '該当する暑さ指数情報が見つかりませんでした。';
+                        }
+                    } else {
+                        errorMessageDiv.textContent = '暑さ指数データの取得に失敗しました。';
+                    }
+                    statusMessageDiv.textContent = '';
+                })
+                .catch(error => {
+                    errorMessageDiv.textContent = `データの取得中にエラーが発生しました: ${error}`;
+                    statusMessageDiv.textContent = '';
+                    console.error("Fetch error:", error);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

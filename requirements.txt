@@ -1,0 +1,4 @@
+Flask==2.3.0  # 使用しているFlaskのバージョンに合わせてください
+requests==2.31.0 # 使用しているrequestsのバージョンに合わせてください
+Flask-Cors==3.0.10 # 使用しているFlask-Corsのバージョンに合わせてください
+gunicorn==21.2.0 # 本番環境用のWSGIサーバー
