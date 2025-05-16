@@ -1,4 +1,0 @@
-Flask==2.3.0  # Webアプリケーションフレームワーク
-requests==2.31.0 # HTTPリクエスト用ライブラリ
-Flask-Cors==3.0.10 # CORS（Cross-Origin Resource Sharing）対応用ライブラリ
-gunicorn==21.2.0 # 本番環境用のWSGIサーバー

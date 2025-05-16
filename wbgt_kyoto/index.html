@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>暑さ指数情報</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            background: #f6f8fa;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 420px;
+            margin: 0.5vw auto 0 auto;
+            padding: 0 0.5vw;
+        }
+        .title {
+            text-align: center;
+            font-size: clamp(1rem, 3vw, 1.5rem);
+            font-weight: bold;
+            margin-bottom: 0.08vw;
+        }
+        .update-time {
+            text-align: center;
+            color: #666;
+            font-size: clamp(0.8rem, 2vw, 1rem);
+            margin-bottom: 0.08vw;
+        }
+        .wbgt-box {
+            background: #2196F3;
+            color: #fff;
+            border-radius: 8px 8px 0 0;
+            text-align: center;
+            padding: 1px 0 1px 0;
+            font-size: clamp(2.5rem, 13vw, 6rem);
+            font-weight: bold;
+            letter-spacing: 2px;
+            line-height: 1.03;
+        }
+        .advice-box {
+            background: #4fc3f7;
+            color: #fff;
+            border-radius: 0 0 8px 8px;
+            text-align: center;
+            padding: clamp(3px, 0.7vw, 8px) 0;
+            font-size: clamp(1.1rem, 4vw, 2.2rem);
+            font-weight: bold;
+            border-top: 2px solid #fff;
+            line-height: 1.15;
+        }
+        @media (max-width: 600px) {
+            .container {
+                max-width: 99vw;
+                margin: 0.2vw auto 0 auto;
+                padding: 0 0.2vw;
+            }
+        }
+        @media (max-width: 400px) {
+            .title, .update-time, .wbgt-box, .advice-box {
+                word-break: break-all;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title" id="title-text"></div>
+        <div class="update-time" id="update-time"></div>
+        <div class="wbgt-box" id="wbgt-value"></div>
+        <div class="advice-box" id="advice-text"></div>
+    </div>
+    <script>
+    // まず stationData を宣言
+    const stationData = {
+        code: '61286',
+        name: '京都',
+        pref: '京都府',
+        lat: 35.0116,
+        lon: 135.7681
+    };
+
+    // その後で titleText を作成
+    const titleText = `${stationData.pref}（${stationData.name}）の暑さ指数`;
+
+    // WBGT値に応じた色と文言を返す関数
+
+    function getWbgtStyleAndAdvice(wbgtValue) { 
+        const value = parseFloat(wbgtValue); 
+        if (value < 21) { 
+            return { 
+                boxClass: 'wbgt-very-safe', 
+                advice: 'ほぼ安全（21℃未満）<br>通常の水分補給', 
+                boxColor: '#0066cc', 
+                adviceColor: '#0066cc' 
+            }; 
+        } else if (value < 25) { 
+            return { 
+                boxClass: 'wbgt-safe', 
+                advice: '注意（21～25℃未満）<br>積極的に水分補給', 
+                boxColor: '#00bfff', 
+                adviceColor: '#00bfff' 
+            }; 
+        } else if (value < 28) { 
+            return { 
+                boxClass: 'wbgt-caution', 
+                advice: '警戒（25～28℃未満）<br>積極的に休憩', 
+                boxColor: '#ffcc00', 
+                adviceColor: '#ffcc00' 
+            }; 
+        } else if (value < 31) { 
+            return { 
+                boxClass: 'wbgt-warning', 
+                advice: '厳重警戒（28～31℃未満）<br>激しい運動は中止', 
+                boxColor: '#ff9900', 
+                adviceColor: '#ff9900' 
+            }; 
+        } else { 
+            return { 
+                boxClass: 'wbgt-danger', 
+                advice: '危険（31℃以上）<br>運動は原則中止', 
+                boxColor: '#ff0000', 
+                adviceColor: '#ff0000' 
+            }; 
+        } 
+    }
+
+    // データ取得・表示
+    function fetchWbgtData() {
+        document.getElementById('title-text').textContent = titleText;
+        fetch('https://wbgt-api-server-422283659205.asia-northeast1.run.app/get-wbgt-html', {
+            method: 'GET',
+            headers: { 'Accept': 'text/html', 'Cache-Control': 'no-cache' },
+            mode: 'cors',
+            credentials: 'omit'
+        })
+        .then(response => response.text())
+        .then(htmlString => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(htmlString, 'text/html');
+            const wbgtMonitor = doc.getElementById('wbgt_monitor');
+            if (wbgtMonitor) {
+                const siteElements = wbgtMonitor.querySelectorAll('.wbgt_monitor_site');
+                siteElements.forEach(siteElement => {
+                    const nameElement = siteElement.querySelector('.name');
+                    const valueElement = siteElement.querySelector('.value');
+                    const onclickAttr = siteElement.getAttribute('onclick');
+                    if (nameElement && valueElement && onclickAttr) {
+                        const match = onclickAttr.match(/submitMapGraph\([^,]+,\s*'[^']+',\s*'[^']+',\s*'([^']+)'\)/);
+                        const stationCode = match ? match[1] : null;
+                        if (stationCode === stationData.code) {
+                            const datetimeElement = wbgtMonitor.querySelector('#wbgt_monitor_datetime');
+                            const updateTime = datetimeElement ? datetimeElement.textContent.trim() : '';
+                            document.getElementById('update-time').textContent = updateTime;
+                            document.getElementById('wbgt-value').textContent = valueElement.textContent.trim();
+                            // WBGT値に応じて色と文言を切り替え
+                            const styleAdvice = getWbgtStyleAndAdvice(valueElement.textContent.trim());
+                            document.getElementById('wbgt-value').style.background = styleAdvice.boxColor;
+                            document.getElementById('advice-text').innerHTML = styleAdvice.advice;
+                            document.getElementById('advice-text').style.background = styleAdvice.adviceColor;
+                        }
+                    }
+                });
+            }
+        });
+    }
+    document.addEventListener('DOMContentLoaded', fetchWbgtData);
+    setInterval(fetchWbgtData, 30 * 60 * 1000);
+    </script>
+</body>
+</html>
