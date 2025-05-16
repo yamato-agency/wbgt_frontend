@@ -1,23 +1,24 @@
-# 京都府の暑さ指数情報アプリケーション
+# 全国47都道府県の暑さ指数情報アプリケーション
 
 環境省が提供する暑さ指数（WBGT）データを表示するWebアプリケーションです。
-現在は京都府の観測地点のみに対応しています。
+全国47都道府県の観測地点に対応しています。
 
 ## 機能
 
-- 京都府の暑さ指数（WBGT）の表示
+- 全国47都道府県の暑さ指数（WBGT）の表示
 - 30分ごとの自動更新
 - 暑さ指数に応じた色分け表示
   - 危険（31℃以上）: 赤色
   - 厳重警戒（28℃以上）: オレンジ色
   - 警戒（25℃以上）: 黄色
-  - 注意（25℃未満）: 水色
+  - 注意（21℃以上）: 水色
+  - さらに安全（21℃未満）: 薄い水色
 
 ## 技術スタック
 
 - フロントエンド: HTML, CSS, JavaScript
 - バックエンド: Python, Flask
-- デプロイ: Google Cloud Run
+- デプロイ: Google Cloud Run, GitHub Pages
 
 ## プロジェクト構成
 
@@ -34,6 +35,11 @@
   - 自動更新機能
   - レスポンシブデザイン
   - 色分け表示の実装
+
+- `public/generate_html.py`: 都道府県別HTMLファイル生成スクリプト
+  - 47都道府県の観測地点データ
+  - 各都道府県用のHTMLファイルを、対応するwbgt_xxxxフォルダ内に`index.html`として生成
+    - 例: `public/wbgt_kyoto/index.html`, `public/wbgt_okinawa/index.html` など
 
 - `requirements.txt`: Pythonの依存関係管理ファイル
   - Flask: Webアプリケーションフレームワーク
@@ -53,6 +59,10 @@
   - Dockerイメージのビルド設定
   - Container Registryへのプッシュ設定
   - Cloud Runへのデプロイ設定
+
+- `.github/workflows/deploy.yml`: GitHub Actions設定ファイル
+  - GitHub Pagesへのデプロイ設定
+  - 静的ファイルの自動デプロイ
 
 ## ローカル環境での動作確認方法
 
@@ -108,11 +118,13 @@ python -m http.server 8000
 ### 4. 動作確認
 
 1. ブラウザで http://localhost:8000 にアクセス
-2. 京都府の暑さ指数情報が表示されることを確認
+2. 各都道府県の暑さ指数情報が表示されることを確認
 3. 30分ごとに自動更新されることを確認
 4. 暑さ指数の値に応じて色が変化することを確認
 
-## Google Cloud Runへのデプロイ方法
+## デプロイ方法
+
+### Google Cloud Runへのデプロイ
 
 1. GCPプロジェクトの準備
 ```bash
@@ -133,6 +145,15 @@ gcloud services enable containerregistry.googleapis.com
 # Cloud Buildを使用してデプロイ
 gcloud builds submit --config cloudbuild.yaml
 ```
+
+### GitHub Pagesへのデプロイ
+
+1. リポジトリの設定
+- GitHubリポジトリの設定で、GitHub Pagesのソースを`gh-pages`ブランチに設定
+
+2. デプロイの自動化
+- `main`ブランチへのプッシュ時に自動的にGitHub Pagesにデプロイされます
+- デプロイの設定は`.github/workflows/deploy.yml`で管理されています
 
 ## 注意事項
 
