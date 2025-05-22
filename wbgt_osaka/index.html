@@ -10,67 +10,100 @@
             background: #f6f8fa;
             margin: 0;
             padding: 0;
+            overflow: hidden;
         }
+        
+        .viewport-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .scaled-container {
+            width: 100%;
+            height: 100%;
+            transform-origin: center center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
         .container {
-            max-width: 420px;
-            margin: 0.5vw auto 0 auto;
-            padding: 0 0.5vw;
+            width: 800px;
+            height: 500px;
+            padding: 0;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
         }
+        
         .title {
             text-align: center;
-            font-size: clamp(1rem, 3vw, 1.5rem);
+            font-size: 64px;
             font-weight: bold;
-            margin-bottom: 0.08vw;
+            margin-bottom: 0px;
+            line-height: 1.0;
+            white-space: nowrap;
         }
+        
         .update-time {
             text-align: center;
             color: #666;
-            font-size: clamp(0.8rem, 2vw, 1rem);
-            margin-bottom: 0.08vw;
+            font-size: 40px;
+            margin-bottom: 0px;
+            line-height: 1.0;
+            white-space: nowrap;
         }
+        
         .wbgt-box {
             background: #2196F3;
             color: #fff;
-            border-radius: 8px 8px 0 0;
+            border-radius: 32px 32px 0 0;
             text-align: center;
-            padding: 1px 0 1px 0;
-            font-size: clamp(2.5rem, 13vw, 6rem);
+            padding: 0;
+            font-size: 180px;
             font-weight: bold;
-            letter-spacing: 2px;
-            line-height: 1.03;
+            letter-spacing: 8px;
+            line-height: 1.0;
+            height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
+        
         .advice-box {
             background: #4fc3f7;
             color: #fff;
-            border-radius: 0 0 8px 8px;
+            border-radius: 0 0 32px 32px;
             text-align: center;
-            padding: clamp(3px, 0.7vw, 8px) 0;
-            font-size: clamp(1.1rem, 4vw, 2.2rem);
+            padding: 12px;
+            font-size: 48px;
             font-weight: bold;
-            border-top: 2px solid #fff;
-            line-height: 1.15;
-        }
-        @media (max-width: 600px) {
-            .container {
-                max-width: 99vw;
-                margin: 0.2vw auto 0 auto;
-                padding: 0 0.2vw;
-            }
-        }
-        @media (max-width: 400px) {
-            .title, .update-time, .wbgt-box, .advice-box {
-                word-break: break-all;
-            }
+            border-top: 1px solid #fff;
+            line-height: 1.1;
+            height: 140px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="title" id="title-text"></div>
-        <div class="update-time" id="update-time"></div>
-        <div class="wbgt-box" id="wbgt-value"></div>
-        <div class="advice-box" id="advice-text"></div>
+    <div class="viewport-container">
+        <div class="scaled-container" id="scaled-container">
+            <div class="container">
+                <div class="title" id="title-text"></div>
+                <div class="update-time" id="update-time"></div>
+                <div class="wbgt-box" id="wbgt-value"></div>
+                <div class="advice-box" id="advice-text"></div>
+            </div>
+        </div>
     </div>
+    
     <script>
     // まず stationData を宣言
     const stationData = {
@@ -84,8 +117,20 @@
     // その後で titleText を作成
     const titleText = `${stationData.pref}（${stationData.name}）の暑さ指数`;
 
-    // WBGT値に応じた色と文言を返す関数
+    // スケール調整関数
+    function adjustScale() {
+        const container = document.getElementById('scaled-container');
+        const baseWidth = 800;
+        const baseHeight = 500;
+        
+        const scaleX = window.innerWidth / baseWidth;
+        const scaleY = window.innerHeight / baseHeight;
+        const scale = Math.min(scaleX, scaleY) * 0.9; // 少し余白を残す
+        
+        container.style.transform = `scale(${scale})`;
+    }
 
+    // WBGT値に応じた色と文言を返す関数
     function getWbgtStyleAndAdvice(wbgtValue) { 
         const value = parseFloat(wbgtValue); 
         if (value < 21) { 
@@ -165,7 +210,14 @@
             }
         });
     }
-    document.addEventListener('DOMContentLoaded', fetchWbgtData);
+    
+    // 初期化とイベントリスナー
+    document.addEventListener('DOMContentLoaded', function() {
+        adjustScale();
+        fetchWbgtData();
+    });
+    
+    window.addEventListener('resize', adjustScale);
     setInterval(fetchWbgtData, 30 * 60 * 1000);
     </script>
 </body>
