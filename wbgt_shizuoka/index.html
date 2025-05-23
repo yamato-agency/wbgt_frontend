@@ -32,30 +32,78 @@
         
         .container {
             width: 800px;
-            height: 500px;
+            height: 400px;
             padding: 0;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
-            justify-content: flex-start;
+            justify-content: center;
+        }
+        
+        /* 横長レイアウト用のスタイル */
+        .container.landscape {
+            flex-direction: row;
+            align-items: stretch;
+            width: 800px;
+            height: 260px;
+            gap: 1px;
+        }
+        
+        .left-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        
+        .container.landscape .left-section {
+            padding: 10px 15px;
+            background: #e8e8e8;
+            border-radius: 32px 0 0 32px;
+            align-items: center;
+        }
+        
+        .right-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: stretch;
         }
         
         .title {
             text-align: center;
             font-size: 64px;
             font-weight: bold;
-            margin-bottom: 0px;
+            margin-bottom: 5px;
             line-height: 1.0;
             white-space: nowrap;
+        }
+        
+        .container.landscape .title {
+            text-align: center;
+            font-size: 48px;
+            margin-bottom: 15px;
+            line-height: 1.1;
+            white-space: normal;
         }
         
         .update-time {
             text-align: center;
             color: #666;
             font-size: 40px;
-            margin-bottom: 0px;
+            margin-bottom: 5px;
             line-height: 1.0;
             white-space: nowrap;
+        }
+        
+        .container.landscape .update-time {
+            text-align: center;
+            font-size: 32px;
+            color: #666;
+            line-height: 1.2;
         }
         
         .wbgt-box {
@@ -74,6 +122,13 @@
             justify-content: center;
         }
         
+        .container.landscape .wbgt-box {
+            border-radius: 0 32px 0 0;
+            height: 130px;
+            font-size: 100px;
+            letter-spacing: 3px;
+        }
+        
         .advice-box {
             background: #4fc3f7;
             color: #fff;
@@ -90,16 +145,28 @@
             justify-content: center;
             box-sizing: border-box;
         }
+        
+        .container.landscape .advice-box {
+            border-radius: 0 0 32px 0;
+            height: 130px;
+            font-size: 28px;
+            padding: 15px;
+            line-height: 1.2;
+        }
     </style>
 </head>
 <body>
     <div class="viewport-container">
         <div class="scaled-container" id="scaled-container">
-            <div class="container">
-                <div class="title" id="title-text"></div>
-                <div class="update-time" id="update-time"></div>
-                <div class="wbgt-box" id="wbgt-value"></div>
-                <div class="advice-box" id="advice-text"></div>
+            <div class="container" id="main-container">
+                <div class="left-section">
+                    <div class="title" id="title-text"></div>
+                    <div class="update-time" id="update-time"></div>
+                </div>
+                <div class="right-section">
+                    <div class="wbgt-box" id="wbgt-value"></div>
+                    <div class="advice-box" id="advice-text"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -115,19 +182,61 @@
     };
 
     // その後で titleText を作成
-    const titleText = `${stationData.pref}（${stationData.name}）の暑さ指数`;
+    function getTitleText(isLandscape) {
+        if (isLandscape) {
+            return `${stationData.pref}（${stationData.name}）\nの暑さ指数`;
+        } else {
+            return `${stationData.pref}（${stationData.name}）の暑さ指数`;
+        }
+    }
 
-    // スケール調整関数
-    function adjustScale() {
-        const container = document.getElementById('scaled-container');
-        const baseWidth = 800;
-        const baseHeight = 500;
+    // レイアウト調整関数
+    function adjustLayout() {
+        const container = document.getElementById('main-container');
+        const scaledContainer = document.getElementById('scaled-container');
         
-        const scaleX = window.innerWidth / baseWidth;
-        const scaleY = window.innerHeight / baseHeight;
-        const scale = Math.min(scaleX, scaleY) * 0.9; // 少し余白を残す
+        // アスペクト比を計算（横/縦）
+        const aspectRatio = window.innerWidth / window.innerHeight;
         
-        container.style.transform = `scale(${scale})`;
+        if (aspectRatio > 2.0) { // 横長の場合
+            container.classList.add('landscape');
+            
+            // 横長レイアウト用のスケール調整
+            const baseWidth = 800;
+            const baseHeight = 260;
+            const scaleX = window.innerWidth / baseWidth;
+            const scaleY = window.innerHeight / baseHeight;
+            const scale = Math.min(scaleX, scaleY) * 0.9;
+            
+            scaledContainer.style.transform = `scale(${scale})`;
+            
+            // タイトルを2行に
+            updateTitle(true);
+        } else { // 縦長または正方形の場合
+            container.classList.remove('landscape');
+            
+            // 通常レイアウト用のスケール調整
+            const baseWidth = 800;
+            const baseHeight = 400;
+            const scaleX = window.innerWidth / baseWidth;
+            const scaleY = window.innerHeight / baseHeight;
+            const scale = Math.min(scaleX, scaleY) * 0.9;
+            
+            scaledContainer.style.transform = `scale(${scale})`;
+            
+            // タイトルを1行に
+            updateTitle(false);
+        }
+    }
+
+    // タイトル更新関数
+    function updateTitle(isLandscape) {
+        const titleElement = document.getElementById('title-text');
+        if (isLandscape) {
+            titleElement.innerHTML = `${stationData.pref}（${stationData.name}）<br>の暑さ指数`;
+        } else {
+            titleElement.textContent = `${stationData.pref}（${stationData.name}）の暑さ指数`;
+        }
     }
 
     // WBGT値に応じた色と文言を返す関数
@@ -173,7 +282,7 @@
 
     // データ取得・表示
     function fetchWbgtData() {
-        document.getElementById('title-text').textContent = titleText;
+        // タイトルは adjustLayout で設定されるため、ここでは設定しない
         fetch('https://wbgt-api-server-422283659205.asia-northeast1.run.app/get-wbgt-html', {
             method: 'GET',
             headers: { 'Accept': 'text/html', 'Cache-Control': 'no-cache' },
@@ -213,11 +322,11 @@
     
     // 初期化とイベントリスナー
     document.addEventListener('DOMContentLoaded', function() {
-        adjustScale();
+        adjustLayout();
         fetchWbgtData();
     });
     
-    window.addEventListener('resize', adjustScale);
+    window.addEventListener('resize', adjustLayout);
     setInterval(fetchWbgtData, 30 * 60 * 1000);
     </script>
 </body>
