@@ -75,19 +75,28 @@
         
         .title {
             text-align: center;
-            font-size: 64px;
+            font-size: 54px;
             font-weight: bold;
             margin-bottom: 5px;
             line-height: 1.0;
-            white-space: nowrap;
+            white-space: normal; /* 折り返し許可 */
+            word-break: keep-all;
+            overflow-wrap: break-word;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
         }
+    
         
         .container.landscape .title {
             text-align: center;
             font-size: 48px;
             margin-bottom: 15px;
             line-height: 1.1;
-            white-space: normal;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
         }
         
         .update-time {
@@ -233,9 +242,9 @@
     function updateTitle(isLandscape) {
         const titleElement = document.getElementById('title-text');
         if (isLandscape) {
-            titleElement.innerHTML = `${stationData.pref}（${stationData.name}）<br>の暑さ指数`;
+            titleElement.innerHTML = `${stationData.pref}(${stationData.name})<br>の暑さ指数`;
         } else {
-            titleElement.textContent = `${stationData.pref}（${stationData.name}）の暑さ指数`;
+            titleElement.textContent = `${stationData.pref}(${stationData.name})の暑さ指数`;
         }
     }
 
